@@ -1,5 +1,6 @@
 pub mod tv_maze;
 
+#[derive(Debug)]
 pub struct SeasonData {
     pub title: String,
     pub url: String,
@@ -10,3 +11,5 @@ pub struct SeasonData {
     pub season_number: i32,
     pub host: Option<String>,
 }
+
+pub use tv_maze::TvMaze;

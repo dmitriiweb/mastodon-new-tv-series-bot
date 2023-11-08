@@ -1,3 +1,4 @@
+use chrono;
 use clap::Parser;
 use std::error::Error;
 use std::fs;
@@ -21,11 +22,24 @@ fn get_config(toml_file: String) -> Result<config::Config, Box<dyn Error>> {
     Ok(config)
 }
 
+fn get_new_tv_shows(config: &Config) {
+    let dt_now = chrono::Utc::now();
+    let tv_maze = apis::TvMaze::new(dt_now, &config.target_genres);
+    let response = requests::get(&tv_maze).unwrap();
+    let new_seasons = tv_maze.get_data(&response).unwrap();
+    for i in new_seasons.iter() {
+        println!("{:?}", i);
+    }
+    // TODO download image
+    // TODO save to db
+    // TODO logs if errors
+}
+
 fn main() {
     let args = CliArguments::parse();
     let config = get_config(args.config).unwrap_or_else(|err| {
         eprintln!("Problem parsing arguments: {}", err);
         std::process::exit(1);
     });
-    println!("{:?}", config)
+    get_new_tv_shows(&config);
 }

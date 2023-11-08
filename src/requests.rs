@@ -2,7 +2,7 @@ use reqwest;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
-use std::io::{Cursor, Read};
+use std::io::{Cursor};
 
 pub trait RequestData {
     fn url(&self) -> String;
@@ -36,7 +36,7 @@ pub struct FileUpload {
 
 pub fn get<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
     let client = reqwest::blocking::Client::new();
-    let mut response = client
+    let response = client
         .get(&data.url())
         .headers(data.headers())
         .query(&data.params())
@@ -47,7 +47,7 @@ pub fn get<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
 
 pub fn post<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
     let client = reqwest::blocking::Client::new();
-    let mut response = client
+    let response = client
         .post(&data.url())
         .headers(data.headers())
         .query(&data.params())
@@ -59,24 +59,24 @@ pub fn post<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
 
 pub fn download_file<T: RequestData>(
     data: &T,
-    file: FileDownload,
+    source_file: FileDownload,
 ) -> Result<String, Box<dyn Error>> {
     let client = reqwest::blocking::Client::new();
-    let mut response = client
+    let response = client
         .get(&data.url())
         .headers(data.headers())
         .query(&data.params())
         .send()?;
-    let mut file = fs::File::create(&file.file_path())?;
+    let mut file = fs::File::create(&source_file.file_path())?;
     let mut content = Cursor::new(response.bytes()?);
     std::io::copy(&mut content, &mut file)?;
-    Ok(file.file_path())
+    Ok(source_file.file_path())
 }
 
 pub fn upload_file<T: RequestData>(data: &T, file: FileUpload) -> Result<String, Box<dyn Error>> {
     let client = reqwest::blocking::Client::new();
     let file = fs::File::open(&file.file_path)?;
-    let mut response = client
+    let response = client
         .post(&data.url())
         .headers(data.headers())
         .query(&data.params())

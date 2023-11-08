@@ -1,5 +1,5 @@
 use super::SeasonData;
-use crate::requests::{FileDownload, RequestData};
+use crate::requests::RequestData;
 use chrono::{DateTime, Utc};
 use reqwest::header;
 use reqwest::header::HeaderMap;
@@ -16,7 +16,16 @@ pub struct TvMaze<'a> {
     target_genres: &'a Vec<String>,
 }
 
-impl TvMaze {
+impl<'a> TvMaze<'a> {
+    pub fn new(target_date: DateTime<Utc>, target_genres: &Vec<String>) -> TvMaze {
+        TvMaze {
+            target_date,
+            target_genres,
+        }
+    }
+}
+
+impl<'a> TvMaze<'a> {
     pub fn get_data(&self, json_source: &str) -> Result<Vec<SeasonData>, Box<dyn Error>> {
         let mut new_seasons = vec![];
         let json_seasons: Vec<NewRawSeason> = serde_json::from_str(json_source)?;
@@ -27,7 +36,7 @@ impl TvMaze {
             if !season._embedded.show.is_target_genres(self.target_genres) {
                 continue;
             }
-            let new_season = SeasonData{
+            let new_season = SeasonData {
                 title: season._embedded.show.name.to_string(),
                 url: season._embedded.show.url.to_string(),
                 language: season._embedded.show.language.clone(),
@@ -43,7 +52,7 @@ impl TvMaze {
     }
 }
 
-impl RequestData for TvMaze {
+impl<'a> RequestData for TvMaze<'a> {
     fn url(&self) -> String {
         TV_MAZE_URL.to_string()
     }
@@ -59,7 +68,7 @@ impl RequestData for TvMaze {
         let user_agent = "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/119.0";
         headers.insert(
             header::USER_AGENT,
-            header::HeaderValue::from_str(user_agent)?,
+            header::HeaderValue::from_str(user_agent).unwrap(),
         );
         headers
     }
@@ -94,7 +103,8 @@ pub struct NewRawShow {
     pub genres: Vec<String>,
     image: Option<HashMap<String, String>>,
     summary: Option<String>,
-    webChannel: Option<NewRawWebChannel>,
+    #[serde(rename = "webChannel")]
+    web_channel: Option<NewRawWebChannel>,
 }
 
 impl NewRawShow {
@@ -136,7 +146,7 @@ impl NewRawShow {
 
 impl NewRawShow {
     pub fn host(&self) -> Option<String> {
-        let webchannel = match &self.webChannel {
+        let webchannel = match &self.web_channel {
             Some(w) => w,
             None => return None,
         };
