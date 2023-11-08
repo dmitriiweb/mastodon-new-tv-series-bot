@@ -55,12 +55,13 @@ fn download_image(config: &Config, tv_maze: &TvMaze, new_season: &SeasonData) ->
         _ => return None,
     };
     let download_image = FileDownload {
-        download_url: image_url,
+        download_url: image_url.clone(),
         save_folder: config.image_dir.clone(),
         headers: tv_maze.headers().clone(),
     };
+    let file_name = download_image.file_name();
     download_file(download_image).unwrap();
-    Some(download_image.file_name())
+    Some(file_name)
 }
 
 fn main() {
