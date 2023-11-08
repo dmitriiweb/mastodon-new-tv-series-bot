@@ -24,10 +24,19 @@ impl NewSeasonModel{
             url: ns.url,
             language: ns.language,
             description: ns.description,
+            genres: Self::get_genres(ns.genres),
+            image_url: ns.image_url,
+            season_number: ns.season_number,
+            host: ns.host,
+            is_published: false,
+            image_path: image_name,
         }
     }
-    fn get_genres(genres: Vec<String>) -> String {
-        genres.join(",")
+    fn get_genres(genres: Vec<String>) -> Option<String> {
+        if genres.len() == 0 {
+            return None;
+        }
+        Some(genres.join(","))
     }
 
 }
