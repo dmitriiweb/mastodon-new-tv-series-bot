@@ -24,9 +24,12 @@ pub struct FileDownload {
 }
 
 impl FileDownload {
-    fn file_path(&self) -> String {
+    pub fn file_path(&self) -> String {
         let file_name = self.download_url.split("/").last().unwrap();
         format!("{}{}", self.save_folder, file_name)
+    }
+    pub fn file_name(&self) -> String {
+        self.download_url.split("/").last().unwrap().to_string()
     }
 }
 
@@ -35,7 +38,7 @@ pub struct FileUpload {
     pub file_path: String,
     pub headers: reqwest::header::HeaderMap,
     pub json_body: HashMap<String, String>,
-    pub params: Vec<(String, String)>
+    pub params: Vec<(String, String)>,
 }
 
 pub fn get<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
