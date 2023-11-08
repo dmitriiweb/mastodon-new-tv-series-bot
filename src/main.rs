@@ -4,6 +4,7 @@ use std::fs;
 
 pub mod apis;
 pub mod config;
+pub mod requests;
 
 use config::Config;
 
