@@ -5,7 +5,7 @@ CREATE TABLE new_seasons
     url           TEXT    NOT NULL,
     language      TEXT,
     description   TEXT,
-    genres        TEXT    NOT NULL,
+    genres        TEXT,
     image_url     TEXT,
     is_published  BOOLEAN NOT NULL,
     season_number INTEGER NOT NULL,

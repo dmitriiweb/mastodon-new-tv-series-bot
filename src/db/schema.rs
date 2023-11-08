@@ -7,7 +7,7 @@ diesel::table! {
         url -> Text,
         language -> Nullable<Text>,
         description -> Nullable<Text>,
-        genres -> Text,
+        genres -> Nullable<Text>,
         image_url -> Nullable<Text>,
         is_published -> Bool,
         season_number -> Integer,
