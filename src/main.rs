@@ -23,11 +23,9 @@ fn get_config(toml_file: String) -> Result<config::Config, Box<dyn Error>> {
 
 fn main() {
     let args = CliArguments::parse();
-    let config = get_config(args.config).unwrap_or_else(
-        |err| {
-            eprintln!("Problem parsing arguments: {}", err);
-            std::process::exit(1);
-        },
-    );
+    let config = get_config(args.config).unwrap_or_else(|err| {
+        eprintln!("Problem parsing arguments: {}", err);
+        std::process::exit(1);
+    });
     println!("{:?}", config)
 }

@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-use std::fs;
-use std::error::Error;
 use reqwest;
+use std::collections::HashMap;
+use std::error::Error;
+use std::fs;
 use std::io::{Cursor, Read};
 
 pub trait RequestData {
@@ -34,10 +34,10 @@ pub struct FileUpload {
     file_path: String,
 }
 
-
 pub fn get<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
     let client = reqwest::blocking::Client::new();
-    let mut response = client.get(&data.url())
+    let mut response = client
+        .get(&data.url())
         .headers(data.headers())
         .query(&data.params())
         .send()?;
@@ -47,7 +47,8 @@ pub fn get<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
 
 pub fn post<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
     let client = reqwest::blocking::Client::new();
-    let mut response = client.post(&data.url())
+    let mut response = client
+        .post(&data.url())
         .headers(data.headers())
         .query(&data.params())
         .json(&data.json_body())
@@ -56,9 +57,13 @@ pub fn post<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
     Ok(body)
 }
 
-pub fn download_file<T: RequestData>(data: &T, file: FileDownload) -> Result<String, Box<dyn Error>> {
+pub fn download_file<T: RequestData>(
+    data: &T,
+    file: FileDownload,
+) -> Result<String, Box<dyn Error>> {
     let client = reqwest::blocking::Client::new();
-    let mut response = client.get(&data.url())
+    let mut response = client
+        .get(&data.url())
         .headers(data.headers())
         .query(&data.params())
         .send()?;
@@ -71,7 +76,8 @@ pub fn download_file<T: RequestData>(data: &T, file: FileDownload) -> Result<Str
 pub fn upload_file<T: RequestData>(data: &T, file: FileUpload) -> Result<String, Box<dyn Error>> {
     let client = reqwest::blocking::Client::new();
     let file = fs::File::open(&file.file_path)?;
-    let mut response = client.post(&data.url())
+    let mut response = client
+        .post(&data.url())
         .headers(data.headers())
         .query(&data.params())
         .body(file)
