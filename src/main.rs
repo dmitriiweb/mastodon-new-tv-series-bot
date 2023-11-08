@@ -6,6 +6,7 @@ use std::fs;
 
 pub mod apis;
 pub mod config;
+pub mod db;
 pub mod requests;
 
 use crate::apis::{SeasonData, TvMaze};
