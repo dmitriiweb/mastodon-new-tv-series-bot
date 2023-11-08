@@ -110,7 +110,7 @@ fn main() {
     env_logger::init();
     let args = CliArguments::parse();
     let config = get_config(args.config).unwrap_or_else(|err| {
-        eprintln!("Problem parsing arguments: {}", err);
+        log::error!("Problem parsing arguments: {}", err);
         std::process::exit(1);
     });
     get_new_tv_shows(&config);
