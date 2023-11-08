@@ -49,15 +49,10 @@ pub fn get_unpublished(
     Ok(result)
 }
 
-pub fn mark_as_published(
-    conn: &mut SqliteConnection,
-    id: &i32,
-) -> Result<(), Box<dyn Error>> {
+pub fn mark_as_published(conn: &mut SqliteConnection, id: &i32) -> Result<(), Box<dyn Error>> {
     use schema::new_seasons::dsl;
     diesel::update(dsl::new_seasons.find(id))
         .set(dsl::is_published.eq(true))
         .execute(conn)?;
     Ok(())
 }
-
-

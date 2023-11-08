@@ -1,5 +1,5 @@
-use diesel::prelude::*;
 use crate::apis;
+use diesel::prelude::*;
 
 #[derive(Insertable)]
 #[diesel(table_name = crate::db::schema::new_seasons)]
@@ -17,7 +17,7 @@ pub struct NewSeasonModel {
     pub host: Option<String>,
 }
 
-impl NewSeasonModel{
+impl NewSeasonModel {
     pub fn from_api(ns: apis::SeasonData, image_name: Option<String>) -> Self {
         Self {
             title: ns.title,
@@ -38,7 +38,6 @@ impl NewSeasonModel{
         }
         Some(genres.join(","))
     }
-
 }
 
 #[derive(Queryable, Selectable, Debug)]
