@@ -13,7 +13,7 @@ pub fn db_connection(sqlite_path: &String) -> SqliteConnection {
 
 pub fn save_new_season(
     conn: &mut SqliteConnection,
-    new_season: models::NewSeasonModel,
+    new_season: &models::NewSeasonModel,
 ) -> Result<(), Box<dyn Error>> {
     use schema::new_seasons;
     let saved_season = get_by_url_and_season(conn, &new_season.url, &new_season.season_number);
