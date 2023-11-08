@@ -8,6 +8,7 @@ pub mod config;
 pub mod requests;
 
 use config::Config;
+use requests::{download_file, FileDownload, RequestData};
 
 #[derive(Parser, Debug)]
 struct CliArguments {
@@ -27,11 +28,20 @@ fn get_new_tv_shows(config: &Config) {
     let tv_maze = apis::TvMaze::new(dt_now, &config.target_genres);
     let response = requests::get(&tv_maze).unwrap();
     let new_seasons = tv_maze.get_data(&response).unwrap();
-    for i in new_seasons.iter() {
-        println!("{:?}", i);
+    for new_season in new_seasons.iter() {
+        let image_url = match new_season.image_url {
+            Some(ref url) => url.clone(),
+            _ => continue,
+        };
+        let download_image = FileDownload {
+            download_url: image_url,
+            save_folder: config.image_dir.clone(),
+            headers: tv_maze.headers().clone(),
+        };
+        let resp = download_file(download_image).unwrap();
+        println!("{:?}", resp);
+        // TODO save to db
     }
-    // TODO download image
-    // TODO save to db
     // TODO logs if errors
 }
 
