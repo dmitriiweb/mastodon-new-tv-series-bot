@@ -8,6 +8,7 @@ use std::fs;
 pub mod apis;
 pub mod config;
 pub mod db;
+pub mod mastodon;
 pub mod requests;
 
 use crate::apis::{SeasonData, TvMaze};
@@ -44,9 +45,6 @@ fn get_new_tv_shows(config: &Config) {
             std::process::exit(1);
         }
     };
-    for i in new_seasons.iter() {
-        println!("{:?}", i);
-    }
     let mut db_conn = db::db_connection(&config.sqlite_path);
     for new_season in new_seasons.iter() {
         let image_name = download_image(config, &tv_maze, new_season);
@@ -115,9 +113,13 @@ fn publish_new_posts(config: &Config) {
             std::process::exit(1);
         }
     };
-    // format posts
-    // publish posts
-    // mark posts as published
+    for new_season in new_seasons.iter() {
+        // upload image
+        let mastodon_post = mastodon::MastodonPost::from_orm(new_season, config.max_post_len);
+        println!("{}", mastodon_post.post_text);
+        // publish post
+        // mark post as published
+    }
 }
 
 fn main() {

@@ -9,7 +9,7 @@ pub struct Config {
     pub mastodon_token: String,
     pub mastodon_url: String,
     pub image_dir: String,
-    pub max_post_len: usize,
+    pub max_post_len: i32,
 }
 
 impl Config {
