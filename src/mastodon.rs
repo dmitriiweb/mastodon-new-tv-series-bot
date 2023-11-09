@@ -42,7 +42,10 @@ impl MastodonPost {
             return post;
         }
         let new_post_length = max_length - default_hashtags_length - 5;
-        let post = post.chars().take(new_post_length as usize).collect::<String>();
+        let post = post
+            .chars()
+            .take(new_post_length as usize)
+            .collect::<String>();
         let post = post + "...\n" + &DEFAULT_HASHTAGS;
         post
     }
