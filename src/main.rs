@@ -106,6 +106,20 @@ fn download_image(config: &Config, tv_maze: &TvMaze, new_season: &SeasonData) ->
     Some(file_name)
 }
 
+fn publish_new_posts(config: &Config) {
+    let mut db_session = db::db_connection(&config.sqlite_path);
+    let new_seasons = match db::get_unpublished(&mut db_session) {
+        Ok(seasons) => seasons,
+        Err(err) => {
+            error!("Cannot get unpublished seasons: {}", err);
+            std::process::exit(1);
+        }
+    };
+    // format posts
+    // publish posts
+    // mark posts as published
+}
+
 fn main() {
     env_logger::init();
     let args = CliArguments::parse();
@@ -113,5 +127,6 @@ fn main() {
         log::error!("Problem parsing arguments: {}", err);
         std::process::exit(1);
     });
-    get_new_tv_shows(&config);
+    // get_new_tv_shows(&config);
+    publish_new_posts(&config);
 }
