@@ -1,16 +1,20 @@
+use crate::config::Config;
 use crate::db::models::NewSeasonModelSelectable;
 use crate::requests::RequestData;
+use std::collections::HashMap;
 
 const DEFAULT_HASHTAGS: &str = "#tvseries #tvshows";
 const MASTODON_URL_LENGTH: i32 = 23;
 
 #[derive(Debug)]
-pub struct MastodonPost {
+pub struct MastodonPost<'a> {
     pub post_text: String,
+    pub config: &'a Config,
+    pub image_id: Option<String>,
 }
 
-impl MastodonPost {
-    pub fn from_orm(data: &NewSeasonModelSelectable, max_length: i32) -> Self {
+impl<'a> MastodonPost<'a> {
+    pub fn from_orm(data: &NewSeasonModelSelectable, config: &'a Config) -> Self {
         let language = Self::hashtag_string_or_na(&data.language);
         let genres = Self::get_genres(&data.genres);
         let when = chrono::Utc::now().format("%d %B %Y").to_string();
@@ -27,8 +31,12 @@ impl MastodonPost {
             {}\n",
             &data.title, &data.url, host, when, &data.season_number, language, genres, description,
         );
-        let post = Self::trim_post(post, max_length, &data.url);
-        Self { post_text: post }
+        let post_text = Self::trim_post(post, config.max_post_len, &data.url);
+        Self {
+            post_text,
+            config,
+            image_id: None,
+        }
     }
 
     fn trim_post(post: String, max_length: i32, source_url: &str) -> String {
@@ -78,12 +86,38 @@ impl MastodonPost {
     }
 }
 
-impl MastodonPost {
+impl<'a> MastodonPost<'a> {
     pub fn upload_image() {}
 }
 
-impl RequestData for MastodonPost {
+impl<'a> RequestData for MastodonPost<'a> {
     fn url(&self) -> String {
-        "".to_string()
+        self.config.mastodon_url.clone()
+    }
+    fn headers(&self) -> reqwest::header::HeaderMap {
+        let mut headers = reqwest::header::HeaderMap::new();
+        let auth_key = format!("Bearer {}", &self.config.mastodon_token);
+        headers.insert(
+            reqwest::header::AUTHORIZATION,
+            reqwest::header::HeaderValue::from_str(&auth_key).unwrap(),
+        );
+        headers.insert(
+            reqwest::header::CONTENT_TYPE,
+            reqwest::header::HeaderValue::from_static("multipart/form-data"),
+        );
+        headers
+    }
+
+    fn json_body(&self) -> serde_json::Value {
+        let media_ids = match self.image_id {
+            Some(ref id) => vec![id.clone()],
+            None => vec![],
+        };
+        let js_body = serde_json::json!({
+            "status": self.post_text,
+            "visibility": "private",
+            "media_ids[]": media_ids,
+        });
+        js_body
     }
 }

@@ -115,8 +115,8 @@ fn publish_new_posts(config: &Config) {
     };
     for new_season in new_seasons.iter() {
         // upload image
-        let mastodon_post = mastodon::MastodonPost::from_orm(new_season, config.max_post_len);
-        println!("{}", mastodon_post.post_text);
+        let mastodon_post = mastodon::MastodonPost::from_orm(new_season, config);
+        println!("{:?}", mastodon_post);
         // publish post
         // mark post as published
     }

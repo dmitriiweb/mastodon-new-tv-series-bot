@@ -12,8 +12,8 @@ pub trait RequestData {
     fn headers(&self) -> reqwest::header::HeaderMap {
         reqwest::header::HeaderMap::new()
     }
-    fn json_body(&self) -> HashMap<String, String> {
-        HashMap::new()
+    fn json_body(&self) -> serde_json::Value {
+        serde_json::Value::Null
     }
 }
 
