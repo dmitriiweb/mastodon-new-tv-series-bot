@@ -1,7 +1,6 @@
 use crate::config::Config;
 use crate::db::models::NewSeasonModelSelectable;
 use crate::requests::{upload_file, FileUpload, RequestData};
-use clap::builder::Resettable::Value;
 use log::error;
 use reqwest::header::HeaderMap;
 use std::error::Error;
@@ -117,16 +116,15 @@ impl<'a> RequestData for MastodonPost<'a> {
 
     fn json_body(&self) -> reqwest::blocking::multipart::Form {
         let status = reqwest::blocking::multipart::Part::text(self.post_text.clone());
-        let visibility = reqwest::blocking::multipart::Part::text("private".to_string());
+        let visibility = reqwest::blocking::multipart::Part::text("public".to_string());
         let media_ids = self.image_ids.join(",");
         let media_ids = reqwest::blocking::multipart::Part::text(media_ids);
-        let mut form = reqwest::blocking::multipart::Form::new()
+        let form = reqwest::blocking::multipart::Form::new()
             .part("status", status)
             .part("visibility", visibility)
             .part("media_ids[]", media_ids);
         form
     }
-
 }
 
 pub struct ImageUploader<'a> {
@@ -144,9 +142,6 @@ impl<'a> ImageUploader<'a> {
             reqwest::header::AUTHORIZATION,
             reqwest::header::HeaderValue::from_str(&auth_key).unwrap(),
         );
-        let json_body = serde_json::json!({
-            "description": self.image_title,
-        });
 
         let file = FileUpload {
             upload_url: self.config.mastodon_image_api_url.clone(),

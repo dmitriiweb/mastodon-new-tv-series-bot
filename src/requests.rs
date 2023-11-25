@@ -1,5 +1,4 @@
 use reqwest;
-use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
 use std::io::Cursor;
@@ -54,7 +53,6 @@ pub fn get<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
 
 pub fn post<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
     let client = reqwest::blocking::Client::new();
-    println!("{:?}", data.json_body());
     let response = client
         .post(&data.url())
         .headers(data.headers())
@@ -62,7 +60,6 @@ pub fn post<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
         .multipart(data.json_body().into())
         .send()?;
     let body = response.text()?;
-    println!("{:?}", body);
     Ok(body)
 }
 

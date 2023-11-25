@@ -116,28 +116,24 @@ fn publish_new_posts(config: &Config) {
     };
     for new_season in new_seasons.iter() {
         // upload image if image_path is not None
-        // let image_id = match &new_season.image_path {
-        //     Some(image_path) => {
-        //         let image_path = format!("{}{}", config.image_dir, image_path);
-        //         let image_uploader = ImageUploader {
-        //             config,
-        //             image_path: &image_path,
-        //             image_title: &new_season.title,
-        //         };
-        //         match image_uploader.upload() {
-        //             Ok(id) => Some(id),
-        //             Err(err) => {
-        //                 error!("Cannot upload image {}: {}", image_path, err);
-        //                 None
-        //             }
-        //         }
-        //     }
-        //     None => None,
-        // };
-
-        // post to mastodon
-        let image_id = None;
-        println!("image_id: {:?}", image_id);
+        let image_id = match &new_season.image_path {
+            Some(image_path) => {
+                let image_path = format!("{}{}", config.image_dir, image_path);
+                let image_uploader = ImageUploader {
+                    config,
+                    image_path: &image_path,
+                    image_title: &new_season.title,
+                };
+                match image_uploader.upload() {
+                    Ok(id) => Some(id),
+                    Err(err) => {
+                        error!("Cannot upload image {}: {}", image_path, err);
+                        None
+                    }
+                }
+            }
+            None => None,
+        };
         let mastodon_post = mastodon::MastodonPost::from_orm(new_season, config, image_id);
         let _ = match requests::post(&mastodon_post) {
             Ok(r) => r,
@@ -148,13 +144,13 @@ fn publish_new_posts(config: &Config) {
         };
 
         // mark post as published
-        // let _ = match db::mark_as_published(&mut db_session, &new_season.id.unwrap()) {
-        //     Ok(_) => (),
-        //     Err(err) => {
-        //         error!("Cannot mark post as published: {}", err);
-        //         continue;
-        //     }
-        // };
+        let _ = match db::mark_as_published(&mut db_session, &new_season.id.unwrap()) {
+            Ok(_) => (),
+            Err(err) => {
+                error!("Cannot mark post as published: {}", err);
+                continue;
+            }
+        };
     }
 }
 
@@ -165,6 +161,6 @@ fn main() {
         log::error!("Problem parsing arguments: {}", err);
         std::process::exit(1);
     });
-    // get_new_tv_shows(&config);
+    get_new_tv_shows(&config);
     publish_new_posts(&config);
 }
