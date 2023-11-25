@@ -1,7 +1,10 @@
 use crate::config::Config;
 use crate::db::models::NewSeasonModelSelectable;
-use crate::requests::RequestData;
-use std::collections::HashMap;
+use crate::requests::{upload_file, FileUpload, RequestData};
+use clap::builder::Resettable::Value;
+use log::error;
+use reqwest::header::HeaderMap;
+use std::error::Error;
 
 const DEFAULT_HASHTAGS: &str = "#tvseries #tvshows";
 const MASTODON_URL_LENGTH: i32 = 23;
@@ -10,11 +13,15 @@ const MASTODON_URL_LENGTH: i32 = 23;
 pub struct MastodonPost<'a> {
     pub post_text: String,
     pub config: &'a Config,
-    pub image_id: Option<String>,
+    pub image_ids: Vec<String>,
 }
 
 impl<'a> MastodonPost<'a> {
-    pub fn from_orm(data: &NewSeasonModelSelectable, config: &'a Config) -> Self {
+    pub fn from_orm(
+        data: &NewSeasonModelSelectable,
+        config: &'a Config,
+        image_id: Option<String>,
+    ) -> Self {
         let language = Self::hashtag_string_or_na(&data.language);
         let genres = Self::get_genres(&data.genres);
         let when = chrono::Utc::now().format("%d %B %Y").to_string();
@@ -32,10 +39,14 @@ impl<'a> MastodonPost<'a> {
             &data.title, &data.url, host, when, &data.season_number, language, genres, description,
         );
         let post_text = Self::trim_post(post, config.max_post_len, &data.url);
+        let image_ids = match image_id {
+            Some(id) => vec![id],
+            None => vec![],
+        };
         Self {
             post_text,
             config,
-            image_id: None,
+            image_ids,
         }
     }
 
@@ -86,16 +97,12 @@ impl<'a> MastodonPost<'a> {
     }
 }
 
-impl<'a> MastodonPost<'a> {
-    pub fn upload_image() {}
-}
-
 impl<'a> RequestData for MastodonPost<'a> {
     fn url(&self) -> String {
-        self.config.mastodon_url.clone()
+        self.config.mastodon_url.clone() + "/api/v1/statuses"
     }
-    fn headers(&self) -> reqwest::header::HeaderMap {
-        let mut headers = reqwest::header::HeaderMap::new();
+    fn headers(&self) -> HeaderMap {
+        let mut headers = HeaderMap::new();
         let auth_key = format!("Bearer {}", &self.config.mastodon_token);
         headers.insert(
             reqwest::header::AUTHORIZATION,
@@ -108,16 +115,64 @@ impl<'a> RequestData for MastodonPost<'a> {
         headers
     }
 
-    fn json_body(&self) -> serde_json::Value {
-        let media_ids = match self.image_id {
-            Some(ref id) => vec![id.clone()],
-            None => vec![],
-        };
-        let js_body = serde_json::json!({
-            "status": self.post_text,
-            "visibility": "private",
-            "media_ids[]": media_ids,
+    fn json_body(&self) -> reqwest::blocking::multipart::Form {
+        let status = reqwest::blocking::multipart::Part::text(self.post_text.clone());
+        let visibility = reqwest::blocking::multipart::Part::text("private".to_string());
+        let media_ids = self.image_ids.join(",");
+        let media_ids = reqwest::blocking::multipart::Part::text(media_ids);
+        let mut form = reqwest::blocking::multipart::Form::new()
+            .part("status", status)
+            .part("visibility", visibility)
+            .part("media_ids[]", media_ids);
+        form
+    }
+
+}
+
+pub struct ImageUploader<'a> {
+    pub config: &'a Config,
+    pub image_path: &'a str,
+    pub image_title: &'a str,
+}
+
+impl<'a> ImageUploader<'a> {
+    // Upload image to mastodon and return image id
+    pub fn upload(&self) -> Result<String, Box<dyn Error>> {
+        let mut headers = HeaderMap::new();
+        let auth_key = format!("Bearer {}", &self.config.mastodon_token);
+        headers.insert(
+            reqwest::header::AUTHORIZATION,
+            reqwest::header::HeaderValue::from_str(&auth_key).unwrap(),
+        );
+        let json_body = serde_json::json!({
+            "description": self.image_title,
         });
-        js_body
+
+        let file = FileUpload {
+            upload_url: self.config.mastodon_image_api_url.clone(),
+            file_path: self.image_path.to_string(),
+            headers,
+            description: self.image_title.to_string(),
+            params: vec![],
+        };
+        let result = upload_file(file)?;
+        let json_result: serde_json::Value = serde_json::from_str(&result)?;
+        let id = match json_result["id"].as_str() {
+            Some(id) => id,
+            None => {
+                error!("Cannot get image id from response: {}", result);
+                std::process::exit(1);
+            }
+        };
+        Ok(id.to_string())
+    }
+    fn headers(&self) -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        let auth = format!("Bearer {}", &self.config.mastodon_token);
+        headers.insert(
+            reqwest::header::AUTHORIZATION,
+            reqwest::header::HeaderValue::from_str(&auth).unwrap(),
+        );
+        headers
     }
 }

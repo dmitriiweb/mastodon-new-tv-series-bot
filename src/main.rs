@@ -12,6 +12,7 @@ pub mod mastodon;
 pub mod requests;
 
 use crate::apis::{SeasonData, TvMaze};
+use crate::mastodon::ImageUploader;
 use config::Config;
 use requests::{download_file, FileDownload, RequestData};
 
@@ -114,11 +115,46 @@ fn publish_new_posts(config: &Config) {
         }
     };
     for new_season in new_seasons.iter() {
-        // upload image
-        let mastodon_post = mastodon::MastodonPost::from_orm(new_season, config);
-        println!("{:?}", mastodon_post);
-        // publish post
+        // upload image if image_path is not None
+        // let image_id = match &new_season.image_path {
+        //     Some(image_path) => {
+        //         let image_path = format!("{}{}", config.image_dir, image_path);
+        //         let image_uploader = ImageUploader {
+        //             config,
+        //             image_path: &image_path,
+        //             image_title: &new_season.title,
+        //         };
+        //         match image_uploader.upload() {
+        //             Ok(id) => Some(id),
+        //             Err(err) => {
+        //                 error!("Cannot upload image {}: {}", image_path, err);
+        //                 None
+        //             }
+        //         }
+        //     }
+        //     None => None,
+        // };
+
+        // post to mastodon
+        let image_id = None;
+        println!("image_id: {:?}", image_id);
+        let mastodon_post = mastodon::MastodonPost::from_orm(new_season, config, image_id);
+        let _ = match requests::post(&mastodon_post) {
+            Ok(r) => r,
+            Err(err) => {
+                error!("Cannot post to mastodon: {}", err);
+                continue;
+            }
+        };
+
         // mark post as published
+        // let _ = match db::mark_as_published(&mut db_session, &new_season.id.unwrap()) {
+        //     Ok(_) => (),
+        //     Err(err) => {
+        //         error!("Cannot mark post as published: {}", err);
+        //         continue;
+        //     }
+        // };
     }
 }
 

@@ -8,6 +8,7 @@ pub struct Config {
     pub target_genres: Vec<String>,
     pub mastodon_token: String,
     pub mastodon_url: String,
+    pub mastodon_image_api_url: String,
     pub image_dir: String,
     pub max_post_len: i32,
 }
@@ -33,6 +34,7 @@ mod tests {
             mastodon_url = "https://mastodon.social"
             image_dir = "images"
             max_post_len = 500
+            mastodon_image_api_url = "https://mastodon.social/api/v1/media"
         "#,
         );
         let config = Config::new(&toml_string).unwrap();
@@ -42,6 +44,10 @@ mod tests {
         assert_eq!(config.mastodon_url, "https://mastodon.social");
         assert_eq!(config.image_dir, "images");
         assert_eq!(config.max_post_len, 500);
+        assert_eq!(
+            config.mastodon_image_api_url,
+            "https://mastodon.social/api/v1/media"
+        );
     }
 
     #[test]

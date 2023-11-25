@@ -12,8 +12,8 @@ pub trait RequestData {
     fn headers(&self) -> reqwest::header::HeaderMap {
         reqwest::header::HeaderMap::new()
     }
-    fn json_body(&self) -> serde_json::Value {
-        serde_json::Value::Null
+    fn json_body(&self) -> reqwest::blocking::multipart::Form {
+        reqwest::blocking::multipart::Form::new()
     }
 }
 
@@ -37,7 +37,7 @@ pub struct FileUpload {
     pub upload_url: String,
     pub file_path: String,
     pub headers: reqwest::header::HeaderMap,
-    pub json_body: HashMap<String, String>,
+    pub description: String,
     pub params: Vec<(String, String)>,
 }
 
@@ -54,13 +54,15 @@ pub fn get<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
 
 pub fn post<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
     let client = reqwest::blocking::Client::new();
+    println!("{:?}", data.json_body());
     let response = client
         .post(&data.url())
         .headers(data.headers())
         .query(&data.params())
-        .json(&data.json_body())
+        .multipart(data.json_body().into())
         .send()?;
     let body = response.text()?;
+    println!("{:?}", body);
     Ok(body)
 }
 
@@ -78,12 +80,15 @@ pub fn download_file(source_file: FileDownload) -> Result<String, Box<dyn Error>
 
 pub fn upload_file(source_file: FileUpload) -> Result<String, Box<dyn Error>> {
     let client = reqwest::blocking::Client::new();
-    let file = fs::File::open(&source_file.file_path)?;
+    let form = reqwest::blocking::multipart::Form::new()
+        .file("file", source_file.file_path.clone())?
+        .text("description", source_file.description.clone());
     let response = client
         .post(&source_file.upload_url)
+        .timeout(std::time::Duration::from_secs(60))
         .headers(source_file.headers)
         .query(&source_file.params)
-        .body(file)
+        .multipart(form)
         .send()?;
     let body = response.text()?;
     Ok(body)
