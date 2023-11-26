@@ -19,3 +19,6 @@ This bot publishes new seasons from tv maze api to your mastodon account.
     ```bash
     0 15 * * * /path/to/binary --config /path/to/config.toml
     ```
+   
+## Known bots
+- [New Sci-Fi and Fantasy Tv](https://patashnik.club/@new_tv_series)
