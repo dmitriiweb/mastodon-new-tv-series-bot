@@ -1,6 +1,6 @@
 # New TV Series Bot
 
-[![](https://github.com/dmitriiweb/mastodon-new-tv-series-bot/blob/main/img/post-example.png?raw=true)]
+![](https://github.com/dmitriiweb/mastodon-new-tv-series-bot/blob/main/img/post-example.png?raw=true)
 
 This bot publishes new seasons from tv maze api to your mastodon account.
 
