@@ -113,7 +113,7 @@ fn main() {
     let new_shows = get_new_tv_shows(&config, &tv_maze);
     for new_season in new_shows.iter() {
         print!("{:?}", new_season);
-        // let image = download_image(&config, &tv_maze, &new_season);
+        let image = download_image(&config, &tv_maze, &new_season);
         // publish_new_post(&config, new_season, image);
     }
 }
