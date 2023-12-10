@@ -27,7 +27,7 @@ fn get_config(toml_file: String) -> Result<config::Config, Box<dyn Error>> {
     Ok(config)
 }
 
-fn get_new_tv_shows(config: &Config, tv_maze: &apis::TvMaze) -> Vec<apis::SeasonData> {
+fn get_new_tv_shows(tv_maze: &apis::TvMaze) -> Vec<apis::SeasonData> {
     let response = match requests::get(tv_maze) {
         Ok(resp) => resp,
         Err(err) => {
@@ -68,31 +68,32 @@ fn download_image(config: &Config, tv_maze: &TvMaze, new_season: &SeasonData) ->
 
 fn publish_new_post(config: &Config, new_season: &apis::SeasonData, image_name: Option<String>) {
     // upload image if image_path is not None
-    // let image_id = match &new_season.image_path {
-    //     Some(image_path) => {
-    //         let image_path = format!("{}{}", config.image_dir, image_path);
-    //         let image_uploader = ImageUploader {
-    //             config,
-    //             image_path: &image_path,
-    //             image_title: &new_season.title,
-    //         };
-    //         match image_uploader.upload() {
-    //             Ok(id) => Some(id),
-    //             Err(err) => {
-    //                 error!("Cannot upload image {}: {}", image_path, err);
-    //                 None
-    //             }
-    //         }
-    //     }
-    //     None => None,
-    // };
-    // let mastodon_post = mastodon::MastodonPost::from_orm(new_season, config, image_id);
-    // let _ = match requests::post(&mastodon_post) {
-    //     Ok(r) => r,
-    //     Err(err) => {
-    //         error!("Cannot post to mastodon: {}", err);
-    //     }
-    // };
+    let image_id = match image_name {
+        Some(image_path) => {
+            let image_path = format!("{}{}", config.image_dir, image_path);
+            let image_uploader = ImageUploader {
+                config,
+                image_path: &image_path,
+                image_title: &new_season.title,
+            };
+            match image_uploader.upload() {
+                Ok(id) => Some(id),
+                Err(err) => {
+                    error!("Cannot upload image {}: {}", image_path, err);
+                    None
+                }
+            }
+        }
+        None => None,
+    };
+    let mastodon_post = mastodon::MastodonPost::from_season_data(new_season, config, image_id);
+    let _ = match requests::post(&mastodon_post) {
+        Ok(r) => r,
+        Err(err) => {
+            error!("Cannot post to mastodon: {}", err);
+            return;
+        }
+    };
 }
 
 fn main() {
@@ -102,18 +103,12 @@ fn main() {
         log::error!("Problem parsing arguments: {}", err);
         std::process::exit(1);
     });
-    // let dt_now = chrono::Utc::now();
-    let dt_now = chrono::NaiveDate::parse_from_str("2023-11-29", "%Y-%m-%d")
-        .unwrap()
-        .and_hms_opt(0, 0, 0)
-        .unwrap()
-        .and_local_timezone(chrono::Utc)
-        .unwrap();
+    let dt_now = chrono::Utc::now();
     let tv_maze = apis::TvMaze::new(dt_now, &config.target_genres);
-    let new_shows = get_new_tv_shows(&config, &tv_maze);
+    let new_shows = get_new_tv_shows(&tv_maze);
     for new_season in new_shows.iter() {
         print!("{:?}", new_season);
-        // let image = download_image(&config, &tv_maze, &new_season);
-        // publish_new_post(&config, new_season, image);
+        let image = download_image(&config, &tv_maze, &new_season);
+        publish_new_post(&config, new_season, image);
     }
 }
