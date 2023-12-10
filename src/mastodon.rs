@@ -1,5 +1,4 @@
 use crate::config::Config;
-use crate::db::models::NewSeasonModelSelectable;
 use crate::requests::{upload_file, FileUpload, RequestData};
 use log::error;
 use reqwest::header::HeaderMap;
@@ -16,38 +15,38 @@ pub struct MastodonPost<'a> {
 }
 
 impl<'a> MastodonPost<'a> {
-    pub fn from_orm(
-        data: &NewSeasonModelSelectable,
-        config: &'a Config,
-        image_id: Option<String>,
-    ) -> Self {
-        let language = Self::hashtag_string_or_na(&data.language);
-        let genres = Self::get_genres(&data.genres);
-        let when = chrono::Utc::now().format("%d %B %Y").to_string();
-        let description = Self::string_or_na(&data.description);
-        let host = Self::hashtag_string_or_na(&data.host);
-        let post = format!(
-            "{}\n\
-            {}\n\n\
-            Host: {}\n\
-            When: {}\n\
-            Season: {}\n\
-            Language: {}\n\
-            Genres: {}\n\n\
-            {}\n",
-            &data.title, &data.url, host, when, &data.season_number, language, genres, description,
-        );
-        let post_text = Self::trim_post(post, config.max_post_len, &data.url);
-        let image_ids = match image_id {
-            Some(id) => vec![id],
-            None => vec![],
-        };
-        Self {
-            post_text,
-            config,
-            image_ids,
-        }
-    }
+    // pub fn from_orm(
+    //     data: &NewSeasonModelSelectable,
+    //     config: &'a Config,
+    //     image_id: Option<String>,
+    // ) -> Self {
+    //     let language = Self::hashtag_string_or_na(&data.language);
+    //     let genres = Self::get_genres(&data.genres);
+    //     let when = chrono::Utc::now().format("%d %B %Y").to_string();
+    //     let description = Self::string_or_na(&data.description);
+    //     let host = Self::hashtag_string_or_na(&data.host);
+    //     let post = format!(
+    //         "{}\n\
+    //         {}\n\n\
+    //         Host: {}\n\
+    //         When: {}\n\
+    //         Season: {}\n\
+    //         Language: {}\n\
+    //         Genres: {}\n\n\
+    //         {}\n",
+    //         &data.title, &data.url, host, when, &data.season_number, language, genres, description,
+    //     );
+    //     let post_text = Self::trim_post(post, config.max_post_len, &data.url);
+    //     let image_ids = match image_id {
+    //         Some(id) => vec![id],
+    //         None => vec![],
+    //     };
+    //     Self {
+    //         post_text,
+    //         config,
+    //         image_ids,
+    //     }
+    // }
 
     fn trim_post(post: String, max_length: i32, source_url: &str) -> String {
         let post_body_length = post.chars().count() as i32;

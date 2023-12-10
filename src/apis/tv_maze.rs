@@ -11,6 +11,7 @@ use std::error::Error;
 const TV_MAZE_URL: &str = "https://api.tvmaze.com/schedule/web";
 const TARGET_SHOW_NUMBER: i32 = 1;
 
+#[derive(Debug, Copy, Clone)]
 pub struct TvMaze<'a> {
     target_date: DateTime<Utc>,
     target_genres: &'a Vec<String>,
