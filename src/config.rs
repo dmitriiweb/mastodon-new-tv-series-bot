@@ -4,7 +4,6 @@ use toml;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
-    pub sqlite_path: String,
     pub target_genres: Vec<String>,
     pub mastodon_token: String,
     pub mastodon_url: String,
@@ -38,7 +37,6 @@ mod tests {
         "#,
         );
         let config = Config::new(&toml_string).unwrap();
-        assert_eq!(config.sqlite_path, "db.sqlite3");
         assert_eq!(config.target_genres, vec!["Anime", "Drama"]);
         assert_eq!(config.mastodon_token, "<mastodon api token>");
         assert_eq!(config.mastodon_url, "https://mastodon.social");

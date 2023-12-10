@@ -1,6 +1,6 @@
 pub mod tv_maze;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SeasonData {
     pub title: String,
     pub url: String,

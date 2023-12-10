@@ -11,6 +11,7 @@ use std::error::Error;
 const TV_MAZE_URL: &str = "https://api.tvmaze.com/schedule/web";
 const TARGET_SHOW_NUMBER: i32 = 1;
 
+#[derive(Debug, Copy, Clone)]
 pub struct TvMaze<'a> {
     target_date: DateTime<Utc>,
     target_genres: &'a Vec<String>,
@@ -139,8 +140,10 @@ impl NewRawShow {
         let fragment = Html::parse_fragment(summary);
         let selector = Selector::parse("p").unwrap();
         let p = fragment.select(&selector).next().unwrap();
-        let text = p.text().collect::<Vec<_>>();
-        Some(text[0].to_string())
+        let texts = p.text().collect::<Vec<_>>();
+        let texts: Vec<String> = texts.iter().map(|t| t.to_string()).collect();
+        let text = texts.join("");
+        Some(text)
     }
 }
 

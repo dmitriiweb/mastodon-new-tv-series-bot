@@ -1,5 +1,5 @@
+use crate::apis;
 use crate::config::Config;
-use crate::db::models::NewSeasonModelSelectable;
 use crate::requests::{upload_file, FileUpload, RequestData};
 use log::error;
 use reqwest::header::HeaderMap;
@@ -16,8 +16,8 @@ pub struct MastodonPost<'a> {
 }
 
 impl<'a> MastodonPost<'a> {
-    pub fn from_orm(
-        data: &NewSeasonModelSelectable,
+    pub fn from_season_data(
+        data: &apis::SeasonData,
         config: &'a Config,
         image_id: Option<String>,
     ) -> Self {
@@ -68,19 +68,15 @@ impl<'a> MastodonPost<'a> {
         post
     }
 
-    fn get_genres(genres: &Option<String>) -> String {
-        match genres {
-            Some(genres) => {
-                let genres = genres.split(",").collect::<Vec<&str>>();
-                let genres = genres
-                    .iter()
-                    .map(|g| format!("#{} ", g))
-                    .collect::<String>();
-                let genres = genres.replace("ScienceFiction", "SciFi");
-                genres
-            }
-            None => "N/A".to_string(),
-        }
+    fn get_genres(genres: &Vec<String>) -> String {
+        if genres.is_empty() {
+            return "N/A".to_string();
+        };
+        let genres = genres
+            .iter()
+            .map(|g| format!("#{} ", g))
+            .collect::<String>();
+        genres
     }
     fn hashtag_string_or_na(s: &Option<String>) -> String {
         match s {
@@ -160,14 +156,5 @@ impl<'a> ImageUploader<'a> {
             }
         };
         Ok(id.to_string())
-    }
-    fn headers(&self) -> HeaderMap {
-        let mut headers = HeaderMap::new();
-        let auth = format!("Bearer {}", &self.config.mastodon_token);
-        headers.insert(
-            reqwest::header::AUTHORIZATION,
-            reqwest::header::HeaderValue::from_str(&auth).unwrap(),
-        );
-        headers
     }
 }
