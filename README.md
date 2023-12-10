@@ -9,7 +9,6 @@ This bot publishes new seasons from tv maze api to your mastodon account.
 1. Download the latest release
 2. Create a `config.toml` file (see below)
     ```toml
-    sqlite_path = "db.sqlite3"
     target_genres = ["Fantasy", "Science-Fiction"]
     mastodon_token = "mastodon token"
     mastodon_url = "https://your.mastodon.instance"
