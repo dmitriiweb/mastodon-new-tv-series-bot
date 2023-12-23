@@ -74,7 +74,7 @@ impl<'a> MastodonPost<'a> {
         };
         let genres = genres
             .iter()
-            .map(|g| format!("#{} ", g))
+            .map(|g| format!("#{} ", g.replace("Science-Fiction", "SciFi")))
             .collect::<String>();
         genres
     }

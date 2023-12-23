@@ -107,7 +107,6 @@ fn main() {
     let tv_maze = apis::TvMaze::new(dt_now, &config.target_genres);
     let new_shows = get_new_tv_shows(&tv_maze);
     for new_season in new_shows.iter() {
-        print!("{:?}", new_season);
         let image = download_image(&config, &tv_maze, &new_season);
         publish_new_post(&config, new_season, image);
     }
