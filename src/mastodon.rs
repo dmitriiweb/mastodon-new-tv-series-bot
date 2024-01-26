@@ -71,11 +71,8 @@ impl<'a> MastodonPost<'a> {
         if genres.is_empty() {
             return "N/A".to_string();
         };
-
-        genres
-            .iter()
-            .map(|g| format!("#{} ", g.replace("Science-Fiction", "SciFi")))
-            .collect::<String>()
+        let genres_tags: Vec<String> = genres.iter().map(|i| format!("#{}", i)).collect();
+        genres_tags.join(" ")
     }
     fn hashtag_string_or_na(s: &Option<String>) -> String {
         match s {
@@ -154,5 +151,97 @@ impl<'a> ImageUploader<'a> {
             }
         };
         Ok(id.to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_from_season_data_all_data() {
+        let test_season_data = apis::SeasonData {
+            title: String::from("title"),
+            url: String::from("url"),
+            language: Some(String::from("en")),
+            description: Some(String::from("description")),
+            genres: vec![String::from("genre1"), String::from("genre2")],
+            image_url: Some(String::from("image_url")),
+            season_number: 1,
+            host: Some(String::from("host")),
+        };
+        let test_config_string = String::from(
+            r#"
+            sqlite_path = "db.sqlite3"
+            target_genres = ["Anime", "Drama"]
+            mastodon_token = "<mastodon api token>"
+            mastodon_url = "https://mastodon.social"
+            image_dir = "images"
+            max_post_len = 500
+            mastodon_image_api_url = "https://mastodon.social/api/v1/media"
+        "#,
+        );
+        let config = Config::new(&test_config_string).unwrap();
+        let image_id = Some(String::from("image_id"));
+        let masto_post = MastodonPost::from_season_data(&test_season_data, &config, image_id);
+        let when = chrono::Utc::now().format("%d %B %Y").to_string();
+
+        let test_post_text = format!(
+            "title\n\
+            url\n\n\
+            Host: #host\n\
+            When: {}\n\
+            Season: 1\n\
+            Language: #en\n\
+            Genres: #genre1 #genre2\n\n\
+            description\n\
+            #tvseries #tvshows",
+            when
+        );
+
+        assert_eq!(test_post_text, masto_post.post_text);
+    }
+    #[test]
+    fn test_from_season_data_missing_fields() {
+        let test_season_data = apis::SeasonData {
+            title: String::from("title"),
+            url: String::from("url"),
+            language: None,
+            description: None,
+            genres: vec![],
+            image_url: None,
+            season_number: 1,
+            host: None,
+        };
+        let test_config_string = String::from(
+            r#"
+            sqlite_path = "db.sqlite3"
+            target_genres = ["Anime", "Drama"]
+            mastodon_token = "<mastodon api token>"
+            mastodon_url = "https://mastodon.social"
+            image_dir = "images"
+            max_post_len = 500
+            mastodon_image_api_url = "https://mastodon.social/api/v1/media"
+        "#,
+        );
+        let config = Config::new(&test_config_string).unwrap();
+        let image_id = None;
+        let masto_post = MastodonPost::from_season_data(&test_season_data, &config, image_id);
+        let when = chrono::Utc::now().format("%d %B %Y").to_string();
+
+        let test_post_text = format!(
+            "title\n\
+            url\n\n\
+            Host: N/A\n\
+            When: {}\n\
+            Season: 1\n\
+            Language: N/A\n\
+            Genres: N/A\n\n\
+            N/A\n\
+            #tvseries #tvshows",
+            when
+        );
+
+        assert_eq!(test_post_text, masto_post.post_text);
     }
 }
