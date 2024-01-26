@@ -56,7 +56,7 @@ impl<'a> MastodonPost<'a> {
         let available_post_size =
             post_body_length - url_length + default_hashtags_length + MASTODON_URL_LENGTH;
         if available_post_size <= max_length {
-            let post = post.clone() + &DEFAULT_HASHTAGS;
+            let post = post.clone() + DEFAULT_HASHTAGS;
             return post;
         }
         let new_post_length = max_length - default_hashtags_length - 5;
@@ -64,19 +64,18 @@ impl<'a> MastodonPost<'a> {
             .chars()
             .take(new_post_length as usize)
             .collect::<String>();
-        let post = post + "...\n" + &DEFAULT_HASHTAGS;
-        post
+        post + "...\n" + DEFAULT_HASHTAGS
     }
 
     fn get_genres(genres: &Vec<String>) -> String {
         if genres.is_empty() {
             return "N/A".to_string();
         };
-        let genres = genres
+
+        genres
             .iter()
             .map(|g| format!("#{} ", g.replace("Science-Fiction", "SciFi")))
-            .collect::<String>();
-        genres
+            .collect::<String>()
     }
     fn hashtag_string_or_na(s: &Option<String>) -> String {
         match s {
@@ -86,7 +85,7 @@ impl<'a> MastodonPost<'a> {
     }
     fn string_or_na(s: &Option<String>) -> String {
         match s {
-            Some(s) => format!("{}", s),
+            Some(s) => s.clone(),
             None => "N/A".to_string(),
         }
     }
@@ -115,11 +114,10 @@ impl<'a> RequestData for MastodonPost<'a> {
         let visibility = reqwest::blocking::multipart::Part::text("public".to_string());
         let media_ids = self.image_ids.join(",");
         let media_ids = reqwest::blocking::multipart::Part::text(media_ids);
-        let form = reqwest::blocking::multipart::Form::new()
+        reqwest::blocking::multipart::Form::new()
             .part("status", status)
             .part("visibility", visibility)
-            .part("media_ids[]", media_ids);
-        form
+            .part("media_ids[]", media_ids)
     }
 }
 
