@@ -1,4 +1,3 @@
-use chrono;
 use clap::Parser;
 use log::error;
 use std::error::Error;
@@ -35,14 +34,13 @@ fn get_new_tv_shows(tv_maze: &apis::TvMaze) -> Vec<apis::SeasonData> {
             std::process::exit(1);
         }
     };
-    let new_seasons = match tv_maze.get_data(&response) {
+    match tv_maze.get_data(&response) {
         Ok(seasons) => seasons,
         Err(err) => {
             error!("Cannot parse api response: {}", err);
             std::process::exit(1);
         }
-    };
-    new_seasons
+    }
 }
 
 fn download_image(config: &Config, tv_maze: &TvMaze, new_season: &SeasonData) -> Option<String> {
@@ -56,7 +54,7 @@ fn download_image(config: &Config, tv_maze: &TvMaze, new_season: &SeasonData) ->
         headers: tv_maze.headers().clone(),
     };
     let file_name = download_image.file_name();
-    let _ = match download_file(download_image) {
+    match download_file(download_image) {
         Ok(_) => (),
         Err(err) => {
             error!("Cannot download image {}: {}", image_url, err);
@@ -107,7 +105,7 @@ fn main() {
     let tv_maze = apis::TvMaze::new(dt_now, &config.target_genres);
     let new_shows = get_new_tv_shows(&tv_maze);
     for new_season in new_shows.iter() {
-        let image = download_image(&config, &tv_maze, &new_season);
+        let image = download_image(&config, &tv_maze, new_season);
         publish_new_post(&config, new_season, image);
     }
 }

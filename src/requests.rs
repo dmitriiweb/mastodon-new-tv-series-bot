@@ -24,11 +24,11 @@ pub struct FileDownload {
 
 impl FileDownload {
     pub fn file_path(&self) -> String {
-        let file_name = self.download_url.split("/").last().unwrap();
+        let file_name = self.download_url.split('/').last().unwrap();
         format!("{}{}", self.save_folder, file_name)
     }
     pub fn file_name(&self) -> String {
-        self.download_url.split("/").last().unwrap().to_string()
+        self.download_url.split('/').last().unwrap().to_string()
     }
 }
 
@@ -43,7 +43,7 @@ pub struct FileUpload {
 pub fn get<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
     let client = reqwest::blocking::Client::new();
     let response = client
-        .get(&data.url())
+        .get(data.url())
         .headers(data.headers())
         .query(&data.params())
         .send()?;
@@ -54,10 +54,10 @@ pub fn get<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
 pub fn post<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
     let client = reqwest::blocking::Client::new();
     let response = client
-        .post(&data.url())
+        .post(data.url())
         .headers(data.headers())
         .query(&data.params())
-        .multipart(data.json_body().into())
+        .multipart(data.json_body())
         .send()?;
     let body = response.text()?;
     Ok(body)

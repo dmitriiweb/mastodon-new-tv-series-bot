@@ -13,7 +13,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(config_file_content: &String) -> Result<Config, Box<dyn Error>> {
+    pub fn new(config_file_content: &str) -> Result<Config, Box<dyn Error>> {
         let config: Config = toml::from_str(config_file_content)?;
         Ok(config)
     }
