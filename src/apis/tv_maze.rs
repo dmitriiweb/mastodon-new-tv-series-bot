@@ -109,7 +109,7 @@ pub struct NewRawShow {
 }
 
 impl NewRawShow {
-    fn is_target_genres(&self, target_genres: &Vec<String>) -> bool {
+    fn is_target_genres(&self, target_genres: &[String]) -> bool {
         for genre in target_genres.iter() {
             if self.genres.contains(genre) {
                 return true;
