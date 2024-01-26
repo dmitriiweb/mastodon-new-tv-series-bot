@@ -244,4 +244,72 @@ mod tests {
 
         assert_eq!(test_post_text, masto_post.post_text);
     }
+
+    #[test]
+    fn test_url() {
+        let test_season_data = apis::SeasonData {
+            title: String::from("title"),
+            url: String::from("url"),
+            language: None,
+            description: None,
+            genres: vec![],
+            image_url: None,
+            season_number: 1,
+            host: None,
+        };
+        let test_config_string = String::from(
+            r#"
+            sqlite_path = "db.sqlite3"
+            target_genres = ["Anime", "Drama"]
+            mastodon_token = "<mastodon api token>"
+            mastodon_url = "https://mastodon.social"
+            image_dir = "images"
+            max_post_len = 500
+            mastodon_image_api_url = "https://mastodon.social/api/v1/media"
+        "#,
+        );
+        let config = Config::new(&test_config_string).unwrap();
+        let image_id = None;
+        let masto_post = MastodonPost::from_season_data(&test_season_data, &config, image_id);
+        let test_url = String::from("https://mastodon.social/api/v1/statuses");
+        assert_eq!(test_url, masto_post.url());
+    }
+
+    #[test]
+    fn test_headers() {
+        let test_season_data = apis::SeasonData {
+            title: String::from("title"),
+            url: String::from("url"),
+            language: None,
+            description: None,
+            genres: vec![],
+            image_url: None,
+            season_number: 1,
+            host: None,
+        };
+        let test_config_string = String::from(
+            r#"
+            sqlite_path = "db.sqlite3"
+            target_genres = ["Anime", "Drama"]
+            mastodon_token = "<mastodon api token>"
+            mastodon_url = "https://mastodon.social"
+            image_dir = "images"
+            max_post_len = 500
+            mastodon_image_api_url = "https://mastodon.social/api/v1/media"
+        "#,
+        );
+        let config = Config::new(&test_config_string).unwrap();
+        let image_id = None;
+        let masto_post = MastodonPost::from_season_data(&test_season_data, &config, image_id);
+        let mut test_headers = HeaderMap::new();
+        test_headers.insert(
+            reqwest::header::AUTHORIZATION,
+            reqwest::header::HeaderValue::from_str("Bearer <mastodon api token>").unwrap(),
+        );
+        test_headers.insert(
+            reqwest::header::CONTENT_TYPE,
+            reqwest::header::HeaderValue::from_static("multipart/form-data"),
+        );
+        assert_eq!(test_headers, masto_post.headers());
+    }
 }
