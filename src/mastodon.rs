@@ -74,10 +74,22 @@ impl<'a> MastodonPost<'a> {
         let genres_tags: Vec<String> = genres.iter().map(|i| format!("#{}", i)).collect();
         genres_tags.join(" ")
     }
+
     fn hashtag_string_or_na(s: &Option<String>) -> String {
-        match s {
-            Some(s) => format!("#{}", s),
+        let raw_string = match s {
+            Some(s) => s.clone(),
             None => "N/A".to_string(),
+        };
+        if raw_string == "N/A" {
+            raw_string
+        } else {
+            let mut hash_tag = String::from("#");
+            for i in raw_string.chars() {
+                if i.is_alphabetic() | i.is_numeric() {
+                    hash_tag.push(i)
+                }
+            }
+            hash_tag
         }
     }
     fn string_or_na(s: &Option<String>) -> String {
@@ -156,6 +168,7 @@ impl<'a> ImageUploader<'a> {
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
 
     #[test]
@@ -311,5 +324,31 @@ mod tests {
             reqwest::header::HeaderValue::from_static("multipart/form-data"),
         );
         assert_eq!(test_headers, masto_post.headers());
+    }
+
+    #[test]
+    fn test_hastag_string_na() {
+        let test_string = None;
+        let result = MastodonPost::hashtag_string_or_na(&test_string);
+        assert_eq!(result, "N/A");
+    }
+
+    #[test]
+    fn test_hastag_string_sign() {
+        let test_string = Some("disnay +".to_string());
+        let result = MastodonPost::hashtag_string_or_na(&test_string);
+        assert_eq!(result, "#disnay");
+    }
+    #[test]
+    fn test_hastag_string_digits() {
+        let test_string = Some("chanal 4".to_string());
+        let result = MastodonPost::hashtag_string_or_na(&test_string);
+        assert_eq!(result, "#chanal4");
+    }
+    #[test]
+    fn test_hastag_string_dash() {
+        let test_string = Some("Science-Fiction".to_string());
+        let result = MastodonPost::hashtag_string_or_na(&test_string);
+        assert_eq!(result, "#ScienceFiction");
     }
 }
