@@ -1,6 +1,7 @@
 use crate::apis;
 use crate::config::Config;
 use crate::requests::{upload_file, FileUpload, RequestData};
+use clap::builder::Str;
 use log::error;
 use reqwest::header::HeaderMap;
 use std::error::Error;
@@ -71,7 +72,11 @@ impl<'a> MastodonPost<'a> {
         if genres.is_empty() {
             return "N/A".to_string();
         };
-        let genres_tags: Vec<String> = genres.iter().map(|i| format!("#{}", i)).collect();
+        let mut genres_tags: Vec<String> = vec![];
+        for i in genres.iter() {
+            let new_tag = MastodonPost::hashtag_string_or_na(&Some(i.clone()));
+            genres_tags.push(new_tag);
+        }
         genres_tags.join(" ")
     }
 
