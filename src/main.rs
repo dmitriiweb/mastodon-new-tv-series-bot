@@ -9,6 +9,8 @@ pub mod apis;
 pub mod config;
 pub mod mastodon;
 pub mod requests;
+pub mod telegram;
+pub mod utils;
 
 use crate::apis::{SeasonData, TvMaze};
 use config::{Config, MastodonConfig};
@@ -88,9 +90,8 @@ fn publish_mastodon_post(
         }
         None => None,
     };
-    let mastodon_post =
-        mastodon::MastodonPost::from_season_data(new_season, &config.mastodon, image_id);
-    let _ = match requests::post(&mastodon_post) {
+    let mastodon_post = mastodon::MastodonPost::from_season_data(new_season, config, image_id);
+    let _ = match requests::post_multipart(&mastodon_post) {
         Ok(r) => r,
         Err(err) => {
             error!("Cannot post to mastodon: {}", err);

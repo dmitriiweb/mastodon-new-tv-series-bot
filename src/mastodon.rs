@@ -1,6 +1,7 @@
 use crate::apis;
 use crate::config::MastodonConfig;
 use crate::requests::{upload_file, FileUpload, RequestData};
+use crate::utils;
 use clap::builder::Str;
 use log::error;
 use reqwest::header::HeaderMap;
@@ -22,11 +23,11 @@ impl<'a> MastodonPost<'a> {
         config: &'a MastodonConfig,
         image_id: Option<String>,
     ) -> Self {
-        let language = Self::hashtag_string_or_na(&data.language);
-        let genres = Self::get_genres(&data.genres);
-        let when = chrono::Utc::now().format("%d %B %Y").to_string();
-        let description = Self::string_or_na(&data.description);
-        let host = Self::hashtag_string_or_na(&data.host);
+        let language = utils::hashtag_string_or_na(&data.language);
+        let genres = utils::get_genres(&data.genres);
+        let when = utils::get_when();
+        let description = utils::string_or_na(&data.description);
+        let host = utils::hashtag_string_or_na(&data.host);
         let post = format!(
             "{}\n\
             {}\n\n\
@@ -67,42 +68,6 @@ impl<'a> MastodonPost<'a> {
             .collect::<String>();
         post + "...\n" + DEFAULT_HASHTAGS
     }
-
-    fn get_genres(genres: &Vec<String>) -> String {
-        if genres.is_empty() {
-            return "N/A".to_string();
-        };
-        let mut genres_tags: Vec<String> = vec![];
-        for i in genres.iter() {
-            let new_tag = MastodonPost::hashtag_string_or_na(&Some(i.clone()));
-            genres_tags.push(new_tag);
-        }
-        genres_tags.join(" ")
-    }
-
-    fn hashtag_string_or_na(s: &Option<String>) -> String {
-        let raw_string = match s {
-            Some(s) => s.clone(),
-            None => "N/A".to_string(),
-        };
-        if raw_string == "N/A" {
-            raw_string
-        } else {
-            let mut hash_tag = String::from("#");
-            for i in raw_string.chars() {
-                if i.is_alphabetic() | i.is_numeric() {
-                    hash_tag.push(i)
-                }
-            }
-            hash_tag
-        }
-    }
-    fn string_or_na(s: &Option<String>) -> String {
-        match s {
-            Some(s) => s.clone(),
-            None => "N/A".to_string(),
-        }
-    }
 }
 
 impl<'a> RequestData for MastodonPost<'a> {
@@ -123,7 +88,7 @@ impl<'a> RequestData for MastodonPost<'a> {
         headers
     }
 
-    fn json_body(&self) -> reqwest::blocking::multipart::Form {
+    fn json_multipart(&self) -> reqwest::blocking::multipart::Form {
         let status = reqwest::blocking::multipart::Part::text(self.post_text.clone());
         let visibility = reqwest::blocking::multipart::Part::text("public".to_string());
         let media_ids = self.image_ids.join(",");
@@ -325,26 +290,26 @@ mod tests {
     #[test]
     fn test_hastag_string_na() {
         let test_string = None;
-        let result = MastodonPost::hashtag_string_or_na(&test_string);
+        let result = utils::hashtag_string_or_na(&test_string);
         assert_eq!(result, "N/A");
     }
 
     #[test]
     fn test_hastag_string_sign() {
         let test_string = Some("disnay +".to_string());
-        let result = MastodonPost::hashtag_string_or_na(&test_string);
+        let result = utils::hashtag_string_or_na(&test_string);
         assert_eq!(result, "#disnay");
     }
     #[test]
     fn test_hastag_string_digits() {
         let test_string = Some("chanal 4".to_string());
-        let result = MastodonPost::hashtag_string_or_na(&test_string);
+        let result = utils::hashtag_string_or_na(&test_string);
         assert_eq!(result, "#chanal4");
     }
     #[test]
     fn test_hastag_string_dash() {
         let test_string = Some("Science-Fiction".to_string());
-        let result = MastodonPost::hashtag_string_or_na(&test_string);
+        let result = utils::hashtag_string_or_na(&test_string);
         assert_eq!(result, "#ScienceFiction");
     }
 }

@@ -1,4 +1,5 @@
 use reqwest;
+use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
 use std::io::Cursor;
@@ -11,8 +12,13 @@ pub trait RequestData {
     fn headers(&self) -> reqwest::header::HeaderMap {
         reqwest::header::HeaderMap::new()
     }
-    fn json_body(&self) -> reqwest::blocking::multipart::Form {
+    fn json_multipart(&self) -> reqwest::blocking::multipart::Form {
         reqwest::blocking::multipart::Form::new()
+    }
+
+    fn json_body(&self) -> HashMap<String, String> {
+        let body = HashMap::new();
+        body
     }
 }
 
@@ -51,13 +57,25 @@ pub fn get<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
     Ok(body)
 }
 
-pub fn post<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
+pub fn post_multipart<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
     let client = reqwest::blocking::Client::new();
     let response = client
         .post(data.url())
         .headers(data.headers())
         .query(&data.params())
-        .multipart(data.json_body())
+        .multipart(data.json_multipart())
+        .send()?;
+    let body = response.text()?;
+    Ok(body)
+}
+
+pub fn post_json<T: RequestData>(data: &T) -> Result<String, Box<dyn Error>> {
+    let client = reqwest::blocking::Client::new();
+    let response = client
+        .post(data.url())
+        .headers(data.headers())
+        .query(&data.params())
+        .json(&data.json_body())
         .send()?;
     let body = response.text()?;
     Ok(body)
