@@ -1,6 +1,7 @@
 use crate::apis;
-use crate::config::Config;
+use crate::config::MastodonConfig;
 use crate::requests::{upload_file, FileUpload, RequestData};
+use crate::utils;
 use clap::builder::Str;
 use log::error;
 use reqwest::header::HeaderMap;
@@ -12,21 +13,21 @@ const MASTODON_URL_LENGTH: i32 = 23;
 #[derive(Debug)]
 pub struct MastodonPost<'a> {
     pub post_text: String,
-    pub config: &'a Config,
+    pub config: &'a MastodonConfig,
     pub image_ids: Vec<String>,
 }
 
 impl<'a> MastodonPost<'a> {
     pub fn from_season_data(
         data: &apis::SeasonData,
-        config: &'a Config,
+        config: &'a MastodonConfig,
         image_id: Option<String>,
     ) -> Self {
-        let language = Self::hashtag_string_or_na(&data.language);
-        let genres = Self::get_genres(&data.genres);
-        let when = chrono::Utc::now().format("%d %B %Y").to_string();
-        let description = Self::string_or_na(&data.description);
-        let host = Self::hashtag_string_or_na(&data.host);
+        let language = utils::hashtag_string_or_na(&data.language);
+        let genres = utils::get_genres(&data.genres);
+        let when = utils::get_when();
+        let description = utils::string_or_na(&data.description);
+        let host = utils::hashtag_string_or_na(&data.host);
         let post = format!(
             "{}\n\
             {}\n\n\
@@ -67,51 +68,15 @@ impl<'a> MastodonPost<'a> {
             .collect::<String>();
         post + "...\n" + DEFAULT_HASHTAGS
     }
-
-    fn get_genres(genres: &Vec<String>) -> String {
-        if genres.is_empty() {
-            return "N/A".to_string();
-        };
-        let mut genres_tags: Vec<String> = vec![];
-        for i in genres.iter() {
-            let new_tag = MastodonPost::hashtag_string_or_na(&Some(i.clone()));
-            genres_tags.push(new_tag);
-        }
-        genres_tags.join(" ")
-    }
-
-    fn hashtag_string_or_na(s: &Option<String>) -> String {
-        let raw_string = match s {
-            Some(s) => s.clone(),
-            None => "N/A".to_string(),
-        };
-        if raw_string == "N/A" {
-            raw_string
-        } else {
-            let mut hash_tag = String::from("#");
-            for i in raw_string.chars() {
-                if i.is_alphabetic() | i.is_numeric() {
-                    hash_tag.push(i)
-                }
-            }
-            hash_tag
-        }
-    }
-    fn string_or_na(s: &Option<String>) -> String {
-        match s {
-            Some(s) => s.clone(),
-            None => "N/A".to_string(),
-        }
-    }
 }
 
 impl<'a> RequestData for MastodonPost<'a> {
     fn url(&self) -> String {
-        self.config.mastodon_url.clone() + "/api/v1/statuses"
+        self.config.url.clone() + "/api/v1/statuses"
     }
     fn headers(&self) -> HeaderMap {
         let mut headers = HeaderMap::new();
-        let auth_key = format!("Bearer {}", &self.config.mastodon_token);
+        let auth_key = format!("Bearer {}", &self.config.token);
         headers.insert(
             reqwest::header::AUTHORIZATION,
             reqwest::header::HeaderValue::from_str(&auth_key).unwrap(),
@@ -123,7 +88,7 @@ impl<'a> RequestData for MastodonPost<'a> {
         headers
     }
 
-    fn json_body(&self) -> reqwest::blocking::multipart::Form {
+    fn json_multipart(&self) -> reqwest::blocking::multipart::Form {
         let status = reqwest::blocking::multipart::Part::text(self.post_text.clone());
         let visibility = reqwest::blocking::multipart::Part::text("public".to_string());
         let media_ids = self.image_ids.join(",");
@@ -135,24 +100,24 @@ impl<'a> RequestData for MastodonPost<'a> {
     }
 }
 
-pub struct ImageUploader<'a> {
-    pub config: &'a Config,
+pub struct MastodonImageUploader<'a> {
+    pub config: &'a MastodonConfig,
     pub image_path: &'a str,
     pub image_title: &'a str,
 }
 
-impl<'a> ImageUploader<'a> {
+impl<'a> MastodonImageUploader<'a> {
     // Upload image to mastodon and return image id
     pub fn upload(&self) -> Result<String, Box<dyn Error>> {
         let mut headers = HeaderMap::new();
-        let auth_key = format!("Bearer {}", &self.config.mastodon_token);
+        let auth_key = format!("Bearer {}", &self.config.token);
         headers.insert(
             reqwest::header::AUTHORIZATION,
             reqwest::header::HeaderValue::from_str(&auth_key).unwrap(),
         );
 
         let file = FileUpload {
-            upload_url: self.config.mastodon_image_api_url.clone(),
+            upload_url: self.config.image_api_url.clone(),
             file_path: self.image_path.to_string(),
             headers,
             description: self.image_title.to_string(),
@@ -190,16 +155,14 @@ mod tests {
         };
         let test_config_string = String::from(
             r#"
-            sqlite_path = "db.sqlite3"
-            target_genres = ["Anime", "Drama"]
-            mastodon_token = "<mastodon api token>"
-            mastodon_url = "https://mastodon.social"
-            image_dir = "images"
+            token = "mastodon token"
+            url = "https://your.mastodon.instance"
+            image_api_url = "https://your.mastodon.instance/api/v2/media"
+            image_dir = "/path/to/images/dir"
             max_post_len = 500
-            mastodon_image_api_url = "https://mastodon.social/api/v1/media"
         "#,
         );
-        let config = Config::new(&test_config_string).unwrap();
+        let config = MastodonConfig::new(&test_config_string).unwrap();
         let image_id = Some(String::from("image_id"));
         let masto_post = MastodonPost::from_season_data(&test_season_data, &config, image_id);
         let when = chrono::Utc::now().format("%d %B %Y").to_string();
@@ -233,16 +196,14 @@ mod tests {
         };
         let test_config_string = String::from(
             r#"
-            sqlite_path = "db.sqlite3"
-            target_genres = ["Anime", "Drama"]
-            mastodon_token = "<mastodon api token>"
-            mastodon_url = "https://mastodon.social"
-            image_dir = "images"
+            token = "mastodon token"
+            url = "https://your.mastodon.instance"
+            image_api_url = "https://your.mastodon.instance/api/v2/media"
+            image_dir = "/path/to/images/dir"
             max_post_len = 500
-            mastodon_image_api_url = "https://mastodon.social/api/v1/media"
         "#,
         );
-        let config = Config::new(&test_config_string).unwrap();
+        let config = MastodonConfig::new(&test_config_string).unwrap();
         let image_id = None;
         let masto_post = MastodonPost::from_season_data(&test_season_data, &config, image_id);
         let when = chrono::Utc::now().format("%d %B %Y").to_string();
@@ -277,19 +238,17 @@ mod tests {
         };
         let test_config_string = String::from(
             r#"
-            sqlite_path = "db.sqlite3"
-            target_genres = ["Anime", "Drama"]
-            mastodon_token = "<mastodon api token>"
-            mastodon_url = "https://mastodon.social"
-            image_dir = "images"
+            token = "mastodon token"
+            url = "https://your.mastodon.instance"
+            image_api_url = "https://your.mastodon.instance/api/v2/media"
+            image_dir = "/path/to/images/dir"
             max_post_len = 500
-            mastodon_image_api_url = "https://mastodon.social/api/v1/media"
         "#,
         );
-        let config = Config::new(&test_config_string).unwrap();
+        let config = MastodonConfig::new(&test_config_string).unwrap();
         let image_id = None;
         let masto_post = MastodonPost::from_season_data(&test_season_data, &config, image_id);
-        let test_url = String::from("https://mastodon.social/api/v1/statuses");
+        let test_url = String::from("https://your.mastodon.instance/api/v1/statuses");
         assert_eq!(test_url, masto_post.url());
     }
 
@@ -307,16 +266,13 @@ mod tests {
         };
         let test_config_string = String::from(
             r#"
-            sqlite_path = "db.sqlite3"
-            target_genres = ["Anime", "Drama"]
-            mastodon_token = "<mastodon api token>"
-            mastodon_url = "https://mastodon.social"
-            image_dir = "images"
+            token = "<mastodon api token>"
+            url = "https://mastodon.social"
             max_post_len = 500
-            mastodon_image_api_url = "https://mastodon.social/api/v1/media"
+            image_api_url = "https://mastodon.social/api/v1/media"
         "#,
         );
-        let config = Config::new(&test_config_string).unwrap();
+        let config = MastodonConfig::new(&test_config_string).unwrap();
         let image_id = None;
         let masto_post = MastodonPost::from_season_data(&test_season_data, &config, image_id);
         let mut test_headers = HeaderMap::new();
@@ -334,26 +290,26 @@ mod tests {
     #[test]
     fn test_hastag_string_na() {
         let test_string = None;
-        let result = MastodonPost::hashtag_string_or_na(&test_string);
+        let result = utils::hashtag_string_or_na(&test_string);
         assert_eq!(result, "N/A");
     }
 
     #[test]
     fn test_hastag_string_sign() {
         let test_string = Some("disnay +".to_string());
-        let result = MastodonPost::hashtag_string_or_na(&test_string);
+        let result = utils::hashtag_string_or_na(&test_string);
         assert_eq!(result, "#disnay");
     }
     #[test]
     fn test_hastag_string_digits() {
         let test_string = Some("chanal 4".to_string());
-        let result = MastodonPost::hashtag_string_or_na(&test_string);
+        let result = utils::hashtag_string_or_na(&test_string);
         assert_eq!(result, "#chanal4");
     }
     #[test]
     fn test_hastag_string_dash() {
         let test_string = Some("Science-Fiction".to_string());
-        let result = MastodonPost::hashtag_string_or_na(&test_string);
+        let result = utils::hashtag_string_or_na(&test_string);
         assert_eq!(result, "#ScienceFiction");
     }
 }
