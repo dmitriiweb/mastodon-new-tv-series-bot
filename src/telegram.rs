@@ -131,13 +131,16 @@ impl<'a> RequestData for TelegramPost<'a> {
 
     fn json_multipart(&self) -> reqwest::blocking::multipart::Form {
         let chat_id = reqwest::blocking::multipart::Part::text(self.config.chat_id.clone());
+        let caption = reqwest::blocking::multipart::Part::text(self.post_text.clone());
         let image_path = match self.image_path.clone() {
             Some(image_path) => image_path,
             None => String::from(""),
         };
         let form = reqwest::blocking::multipart::Form::new()
+            .part("caption", caption)
             .part("chat_id", chat_id)
             .file("photo", image_path);
+
         match form {
             Ok(form) => form,
             Err(_) => panic!("Cant read image for posting"),

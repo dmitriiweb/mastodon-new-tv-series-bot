@@ -1,9 +1,10 @@
 use chrono::format;
 use clap::Parser;
-use log::error;
+use log::{error, warn};
 use mastodon::MastodonImageUploader;
 use std::error::Error;
 use std::fs;
+use telegram::TelegramPost;
 
 pub mod apis;
 pub mod config;
@@ -13,7 +14,7 @@ pub mod telegram;
 pub mod utils;
 
 use crate::apis::{SeasonData, TvMaze};
-use config::{Config, MastodonConfig};
+use config::{Config, MastodonConfig, TelegramConfig};
 use requests::{download_file, FileDownload, RequestData};
 
 #[derive(Parser, Debug)]
@@ -100,6 +101,26 @@ fn publish_mastodon_post(
     };
 }
 
+fn publish_telegram_post(
+    config: &TelegramConfig,
+    new_season: &apis::SeasonData,
+    image_path: Option<String>,
+) {
+    let telegram_post = TelegramPost::from_season_data(new_season, config, image_path.clone());
+    let result = match image_path {
+        Some(_) => requests::post_multipart(&telegram_post),
+        None => requests::post_json(&telegram_post),
+    };
+
+    let _ = match result {
+        Ok(r) => r,
+        Err(err) => {
+            error!("Cannot post to telegram: {}", err);
+            return;
+        }
+    };
+}
+
 fn main() {
     env_logger::init();
     let args = CliArguments::parse();
@@ -116,6 +137,14 @@ fn main() {
             Some(image_name) => Some(format!("{}{}", config.image_dir, image_name)),
             None => None,
         };
-        publish_mastodon_post(&config.mastodon, new_season, image_path);
+        for channel in config.send_to.iter() {
+            if channel == "mastodon" {
+                publish_mastodon_post(&config.mastodon, new_season, image_path.clone());
+            } else if channel == "telegram" {
+                publish_telegram_post(&config.telegram, new_season, image_path.clone())
+            } else {
+                warn!("Unknown SendTo param: {:?}", channel);
+            }
+        }
     }
 }
