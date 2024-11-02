@@ -27,16 +27,20 @@ impl<'a> TvMaze<'a> {
 }
 
 impl<'a> TvMaze<'a> {
-    pub fn get_data(&self, json_source: &str) -> Result<Vec<SeasonData>, Box<dyn Error>> {
-        let mut new_seasons = vec![];
+    pub fn get_data(
+        &self,
+        json_source: &str,
+    ) -> Result<HashMap<String, Vec<SeasonData>>, Box<dyn Error>> {
+        let mut genre_map: HashMap<String, Vec<SeasonData>> = HashMap::new();
         let json_seasons: Vec<NewRawSeason> = serde_json::from_str(json_source)?;
+
         for season in json_seasons.iter() {
+            // Check if the season is for the target show number
             if !season.is_target_show_number(TARGET_SHOW_NUMBER) {
                 continue;
             }
-            if !season._embedded.show.is_target_genres(self.target_genres) {
-                continue;
-            }
+
+            // Create a new SeasonData instance
             let new_season = SeasonData {
                 title: season._embedded.show.name.to_string(),
                 url: season._embedded.show.url.to_string(),
@@ -47,12 +51,19 @@ impl<'a> TvMaze<'a> {
                 season_number: season.season.unwrap(),
                 host: season._embedded.show.host(),
             };
-            new_seasons.push(new_season);
+
+            // Add the SeasonData to the corresponding genre(s) in the hashmap
+            for genre in &new_season.genres {
+                genre_map
+                    .entry(genre.clone())
+                    .or_insert_with(Vec::new)
+                    .push(new_season.clone());
+            }
         }
-        Ok(new_seasons)
+
+        Ok(genre_map)
     }
 }
-
 impl<'a> RequestData for TvMaze<'a> {
     fn url(&self) -> String {
         TV_MAZE_URL.to_string()
