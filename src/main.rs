@@ -16,6 +16,7 @@ pub mod utils;
 use crate::apis::{SeasonData, TvMaze};
 use config::{Config, MastodonConfig, TelegramConfig};
 use requests::{download_file, FileDownload, RequestData};
+use std::collections::HashMap;
 
 #[derive(Parser, Debug)]
 struct CliArguments {
@@ -30,7 +31,7 @@ fn get_config(toml_file: String) -> Result<config::Config, Box<dyn Error>> {
     Ok(config)
 }
 
-fn get_new_tv_shows(tv_maze: &apis::TvMaze) -> Vec<apis::SeasonData> {
+fn get_new_tv_shows(tv_maze: &apis::TvMaze) -> HashMap<String, Vec<apis::SeasonData>> {
     let response = match requests::get(tv_maze) {
         Ok(resp) => resp,
         Err(err) => {
@@ -38,15 +39,15 @@ fn get_new_tv_shows(tv_maze: &apis::TvMaze) -> Vec<apis::SeasonData> {
             std::process::exit(1);
         }
     };
+
     match tv_maze.get_data(&response) {
-        Ok(seasons) => seasons,
+        Ok(season_map) => season_map,
         Err(err) => {
             error!("Cannot parse api response: {}", err);
             std::process::exit(1);
         }
     }
 }
-
 fn download_image(config: &Config, tv_maze: &TvMaze, new_season: &SeasonData) -> Option<String> {
     let image_url = match new_season.image_url {
         Some(ref url) => url.clone(),
