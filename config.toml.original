@@ -20,14 +20,13 @@ token = "telegram token"
 
 [targets]
 
-[targets.target1]
-type = "mastodon"
+[targets.mastodon.1]
 mastodon_token = "mastodon token"
 mastodon_url = "https://your.mastodon.instance"
 mastodon_image_api_url = "https://your.mastodon.instance/api/v2/media"
 image_dir = "/path/to/images/dir"
 max_post_len = 500
 
-[targets.target2]
+[targets.telegram.1]
 type = "telegram"
 telegram_chat_id = "telegram chat id"
