@@ -1,14 +1,33 @@
-send_to = ["mastodon", "telegram"]
+# Under comment is the old version of config.toml
+# send_to = ["mastodon", "telegram"]
+# 
+# target_genres = ["Fantasy", "Science-Fiction"]
+# 
+# [mastodon]
+# mastodon_token = "mastodon token"
+# mastodon_url = "https://your.mastodon.instance"
+# mastodon_image_api_url = "https://your.mastodon.instance/api/v2/media"
+# image_dir = "/path/to/images/dir"
+# max_post_len = 500
+# 
+# [telegram]
+# telegram_token = "telegram token"
+# telegram_chat_id = "telegram chat id"
+[settings]
 
-target_genres = ["Fantasy", "Science-Fiction"]
+[settings.telegram]
+token = "telegram token"
 
-[mastodon]
+[targets]
+
+[targets.target1]
+type = "mastodon"
 mastodon_token = "mastodon token"
 mastodon_url = "https://your.mastodon.instance"
 mastodon_image_api_url = "https://your.mastodon.instance/api/v2/media"
 image_dir = "/path/to/images/dir"
 max_post_len = 500
 
-[telegram]
-telegram_token = "telegram token"
+[targets.target2]
+type = "telegram"
 telegram_chat_id = "telegram chat id"
