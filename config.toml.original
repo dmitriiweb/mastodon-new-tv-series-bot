@@ -26,7 +26,8 @@ mastodon_url = "https://your.mastodon.instance"
 mastodon_image_api_url = "https://your.mastodon.instance/api/v2/media"
 image_dir = "/path/to/images/dir"
 max_post_len = 500
+target_genres = ["Fantasy", "Science-Fiction"]
 
 [targets.telegram.1]
-type = "telegram"
 telegram_chat_id = "telegram chat id"
+target_genres = ["Fantasy", "Science-Fiction"]
